@@ -4,6 +4,8 @@
 *.img.x86_64
 *.img.armv7l
 
+dockerContext*
+
 gcc-arm-8.3-2019.03-x86_64-aarch64-linux-gnu.tar.xz
 gcc-arm-8.3-2019.03-x86_64-arm-linux-gnueabihf.tar.xz
 gcc-linaro-7.2.1-2017.11-x86_64_aarch64-linux-gnu.tar.xz

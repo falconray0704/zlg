@@ -6,6 +6,31 @@ set -e
 . ../libShell/echo_color.lib
 . ../libShell/sysEnv.lib
 
+BUILD_CONTEXT_DIR="./dockerContext"
+
+build_img_a9_func()
+{
+    TARGET=$1
+    TARGET_VER=$2
+    ARCH=$(arch)
+
+    cp ./Dockerfile_${TARGET}${TARGET_VER}_a9.img ./Dockerfile_${TARGET}${TARGET_VER}_a9.img.${ARCH} 
+
+    if [ ${TARGET} == build ]; then
+        sed -i "s/yocto_arch/yocto_${ARCH}/" ./Dockerfile_${TARGET}${TARGET_VER}_a9.img.${ARCH}
+    else
+            echoR "Unsupport target:${TARGET} for image building."
+            exit 1
+    fi
+
+    docker build --rm -t zlg/yocto_a9_${ARCH}:${TARGET}${TARGET_VER} \
+        --build-arg "group=$(id -gn)" \
+        --build-arg "gid=$(id -u)" \
+        --build-arg "user=$(id -un)" \
+        --build-arg	"uid=$(id -g)" \
+        -f ./Dockerfile_${TARGET}${TARGET_VER}_a9.img.${ARCH} ${BUILD_CONTEXT_DIR}
+}
+
 build_img_ti_func()
 {
     TARGET=$1
@@ -26,7 +51,7 @@ build_img_ti_func()
         --build-arg "gid=$(id -u)" \
         --build-arg "user=$(id -un)" \
         --build-arg	"uid=$(id -g)" \
-        -f ./Dockerfile_${TARGET}${TARGET_VER}_ti.img.${ARCH} .
+        -f ./Dockerfile_${TARGET}${TARGET_VER}_ti.img.${ARCH} ${BUILD_CONTEXT_DIR}
 }
 
 build_img_func()
@@ -51,7 +76,7 @@ build_img_func()
         --build-arg "gid=$(id -u)" \
         --build-arg "user=$(id -un)" \
         --build-arg	"uid=$(id -g)" \
-        -f ./Dockerfile_${TARGET}${TARGET_VER}.img.${ARCH} .
+        -f ./Dockerfile_${TARGET}${TARGET_VER}.img.${ARCH} ${BUILD_CONTEXT_DIR}
 }
 
 build_target_func()
@@ -66,12 +91,31 @@ build_target_func()
         1804ti)
         TARGET_VER=1804
         do_clean_img_ti_func ${TARGET} ${TARGET_VER}
-        download_resource_func
+        BUILD_CONTEXT_DIR="./dockerContext_ti"
+        mkdir -p ${BUILD_CONTEXT_DIR}
+        download_resource_ti_func
         build_img_ti_func ${TARGET} ${TARGET_VER}
+        ;;
+        1804a9)
+        TARGET_VER=1804
+        do_clean_img_a9_func ${TARGET} ${TARGET_VER}
+        BUILD_CONTEXT_DIR="./dockerContext_a9"
+        mkdir -p ${BUILD_CONTEXT_DIR}
+        download_resource_a9_func
+        build_img_a9_func ${TARGET} ${TARGET_VER}
         ;;
         *) echoR "Unsupported version:$2."
         exit 1
     esac
+}
+
+do_clean_img_a9_func()
+{
+    TARGET=$1
+    TARGET_VER=$2
+    ARCH=$(arch)
+	docker rmi -f zlg/yocto_a9_${ARCH}:${TARGET}${TARGET_VER}
+	docker image prune
 }
 
 do_clean_img_ti_func()
@@ -92,8 +136,26 @@ do_clean_img_func()
 	docker image prune
 }
 
-download_resource_func()
+download_resource_a9_func()
 {
+    pushd ${BUILD_CONTEXT_DIR}
+
+    # download reop
+    if [ -e ./repo ]; then
+        echoG "repo is ready!"
+    else
+        echoY "repo is downloading......"
+        curl http://commondatastorage.googleapis.com/git-repo-downloads/repo > ./repo
+    fi
+
+    popd
+
+}
+
+download_resource_ti_func()
+{
+    pushd ${BUILD_CONTEXT_DIR}
+
     # download reop
     if [ -e ./repo ]; then
         echoG "repo is ready!"
@@ -131,6 +193,8 @@ download_resource_func()
         wget -c https://releases.linaro.org/components/toolchain/binaries/7.2-2017.11/aarch64-linux-gnu/gcc-linaro-7.2.1-2017.11-x86_64_aarch64-linux-gnu.tar.xz ./
     fi
 
+    popd
+
 }
 
 ARCH=$(arch)
@@ -143,7 +207,7 @@ usage_func()
     echo "[ basic, build ]"
     echo ""
     echoY "Supported target version:"
-    echo "[ 1804, 1804ti ]"
+    echo "[ 1804, 1804ti, 1804a9 ]"
 
     echoY "Images usage:"
     echo 'docker run --rm -it -v  /<source path on host>/tisdk:/<mapping path in docker container>/tisdk --workdir=/<mapping path in docker container>/tisdk --hostname "ti" -u $(id -un) zlg/yocto_ti_x86_64:build1804'
@@ -164,7 +228,9 @@ case $1 in
         ;;
     test)
         echoY "Testing..."
-#        download_resource_func
+        BUILD_CONTEXT_DIR="./dockerContext_ti"
+        mkdir -p ${BUILD_CONTEXT_DIR}
+        download_resource_ti_func
         ;;
     *) echoR "Unsupported target:$1."
         usage_func
