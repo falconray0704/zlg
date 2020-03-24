@@ -86,20 +86,30 @@ build_target_func()
     case $2 in
         1404|1604|1804)
         do_clean_img_func ${TARGET} ${TARGET_VER}
+        BUILD_CONTEXT_DIR="./dockerContext_${TARGET}_${TARGET_VER}"
+        mkdir -p ${BUILD_CONTEXT_DIR}
         build_img_func ${TARGET} ${TARGET_VER}
         ;;
         1804ti)
         TARGET_VER=1804
         do_clean_img_ti_func ${TARGET} ${TARGET_VER}
-        BUILD_CONTEXT_DIR="./dockerContext_ti"
+        BUILD_CONTEXT_DIR="./dockerContext_${TARGET}_${TARGET_VER}"
         mkdir -p ${BUILD_CONTEXT_DIR}
         download_resource_ti_func
         build_img_ti_func ${TARGET} ${TARGET_VER}
         ;;
+        1404a9)
+        TARGET_VER=1404
+        do_clean_img_a9_func ${TARGET} ${TARGET_VER}
+        BUILD_CONTEXT_DIR="./dockerContext_${TARGET}_${TARGET_VER}"
+        mkdir -p ${BUILD_CONTEXT_DIR}
+        download_resource_a9_func
+        build_img_a9_func ${TARGET} ${TARGET_VER}
+        ;;
         1804a9)
         TARGET_VER=1804
         do_clean_img_a9_func ${TARGET} ${TARGET_VER}
-        BUILD_CONTEXT_DIR="./dockerContext_a9"
+        BUILD_CONTEXT_DIR="./dockerContext_${TARGET}_${TARGET_VER}"
         mkdir -p ${BUILD_CONTEXT_DIR}
         download_resource_a9_func
         build_img_a9_func ${TARGET} ${TARGET_VER}
@@ -207,7 +217,7 @@ usage_func()
     echo "[ basic, build ]"
     echo ""
     echoY "Supported target version:"
-    echo "[ 1804, 1804ti, 1804a9 ]"
+    echo "[ 1404, 1404a9, 1804, 1804ti, 1804a9 ]"
 
     echoY "Images usage:"
     echo 'docker run --rm -it -v  /<source path on host>/tisdk:/<mapping path in docker container>/tisdk --workdir=/<mapping path in docker container>/tisdk --hostname "ti" -u $(id -un) zlg/yocto_ti_x86_64:build1804'
