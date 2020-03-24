@@ -1,0 +1,24 @@
+FROM zlg/yocto_arch:build1404
+
+ARG user
+ARG uid
+ARG group
+ARG gid
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN groupadd -r "$group" -g "$gid" \
+    && useradd -r -m -u "$uid" -g "$gid" -s "/bin/bash" "$user" \
+    && usermod -aG $group root
+
+COPY . /home/$user
+
+RUN mkdir -p /home/"$user"/bin \
+        && cd /home/"$user" \
+        && cp repo /home/"$user/bin/repo" \
+        && chmod a+x /home/"$user"/bin/repo \
+        && echo "PATH=/home/$user/bin:$PATH" >> /home/$user/.bashrc
+
+#USER $user
+
+
