@@ -1,0 +1,34 @@
+FROM zlg/yocto_arch:build1804
+
+ARG user
+ARG uid
+ARG group
+ARG gid
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+        && ubootKernelDep='git-core gnupg flex bison gperf build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev ccache libgl1-mesa-dev libxml2-utils xsltproc unzip device-tree-compiler liblz4-tool' \
+        && buildrootDep='libfile-which-perl sed make binutils gcc g++ bash patch gzip bzip2 perl tar cpio python unzip rsync file bc libmpc3 git texinfo pkg-config cmake tree texinfo time' \
+        && apt-get -y install $ubootKernelDep $buildrootDep \
+        && apt-get autoremove
+
+RUN groupadd -r "$group" -g "$gid" \
+    && useradd -r -m -u "$uid" -g "$gid" -s "/bin/bash" "$user" \
+    && usermod -aG $group root
+
+COPY . /home/$user
+
+RUN mkdir -p /home/"$user"/bin \
+        && cd /home/"$user" \
+        && cp repo /home/"$user/bin/repo" \
+        && chmod a+x /home/"$user"/bin/repo \
+        && echo "export PATH=/home/$user/bin:$PATH" >> /home/$user/.bashrc \
+        && tar -zxf m1808-sdk-1.3.0-ga.tar.gz -C / \
+        && echo "export PATH=$PATH:/opt/zlg/m1808-sdk-1.3.0-ga/host/bin" >> /home/$user/.bashrc
+
+#        && ls -al \
+
+#USER $user
+
+
