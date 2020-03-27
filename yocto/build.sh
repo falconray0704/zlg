@@ -8,6 +8,31 @@ set -e
 
 BUILD_CONTEXT_DIR="./dockerContext"
 
+build_img_rk1808_func()
+{
+    TARGET=$1
+    TARGET_VER=$2
+    ARCH=$(arch)
+
+    cp ./Dockerfile_${TARGET}${TARGET_VER}_rk1808.img ./Dockerfile_${TARGET}${TARGET_VER}_rk1808.img.${ARCH} 
+
+    if [ ${TARGET} == build ]; then
+        sed -i "s/yocto_arch/yocto_${ARCH}/" ./Dockerfile_${TARGET}${TARGET_VER}_rk1808.img.${ARCH}
+    else
+            echoR "Unsupport target:${TARGET} for image building."
+            exit 1
+    fi
+
+    ls -al ${BUILD_CONTEXT_DIR}
+
+    docker build --rm -t zlg/yocto_rk1808_${ARCH}:${TARGET}${TARGET_VER} \
+        --build-arg "group=$(id -gn)" \
+        --build-arg "gid=$(id -u)" \
+        --build-arg "user=$(id -un)" \
+        --build-arg	"uid=$(id -g)" \
+        -f ./Dockerfile_${TARGET}${TARGET_VER}_rk1808.img.${ARCH} ${BUILD_CONTEXT_DIR}
+}
+
 build_img_a9_func()
 {
     TARGET=$1
@@ -93,7 +118,7 @@ build_target_func()
         1804ti)
         TARGET_VER=1804
         do_clean_img_ti_func ${TARGET} ${TARGET_VER}
-        BUILD_CONTEXT_DIR="./dockerContext_${TARGET}_${TARGET_VER}"
+        BUILD_CONTEXT_DIR="./dockerContext_${TARGET}_${TARGET_VER}_ti"
         mkdir -p ${BUILD_CONTEXT_DIR}
         download_resource_ti_func
         build_img_ti_func ${TARGET} ${TARGET_VER}
@@ -101,7 +126,7 @@ build_target_func()
         1404a9)
         TARGET_VER=1404
         do_clean_img_a9_func ${TARGET} ${TARGET_VER}
-        BUILD_CONTEXT_DIR="./dockerContext_${TARGET}_${TARGET_VER}"
+        BUILD_CONTEXT_DIR="./dockerContext_${TARGET}_${TARGET_VER}_a9"
         mkdir -p ${BUILD_CONTEXT_DIR}
         download_resource_a9_func
         build_img_a9_func ${TARGET} ${TARGET_VER}
@@ -109,14 +134,31 @@ build_target_func()
         1804a9)
         TARGET_VER=1804
         do_clean_img_a9_func ${TARGET} ${TARGET_VER}
-        BUILD_CONTEXT_DIR="./dockerContext_${TARGET}_${TARGET_VER}"
+        BUILD_CONTEXT_DIR="./dockerContext_${TARGET}_${TARGET_VER}_a9"
         mkdir -p ${BUILD_CONTEXT_DIR}
         download_resource_a9_func
         build_img_a9_func ${TARGET} ${TARGET_VER}
         ;;
+        1804rk1808)
+        TARGET_VER=1804
+        do_clean_img_rk1808_func ${TARGET} ${TARGET_VER}
+        BUILD_CONTEXT_DIR="./dockerContext_${TARGET}_${TARGET_VER}_rk1808"
+        mkdir -p ${BUILD_CONTEXT_DIR}
+        download_resource_rk1808_func
+        build_img_rk1808_func ${TARGET} ${TARGET_VER}
+        ;;
         *) echoR "Unsupported version:$2."
         exit 1
     esac
+}
+
+do_clean_img_rk1808_func()
+{
+    TARGET=$1
+    TARGET_VER=$2
+    ARCH=$(arch)
+	docker rmi -f zlg/yocto_rk1808_${ARCH}:${TARGET}${TARGET_VER}
+	docker image prune
 }
 
 do_clean_img_a9_func()
@@ -144,6 +186,22 @@ do_clean_img_func()
     ARCH=$(arch)
 	docker rmi -f zlg/yocto_${ARCH}:${TARGET}${TARGET_VER}
 	docker image prune
+}
+
+download_resource_rk1808_func()
+{
+    pushd ${BUILD_CONTEXT_DIR}
+
+    # download reop
+    if [ -e ./repo ]; then
+        echoG "repo is ready!"
+    else
+        echoY "repo is downloading......"
+        curl http://commondatastorage.googleapis.com/git-repo-downloads/repo > ./repo
+    fi
+
+    popd
+
 }
 
 download_resource_a9_func()
@@ -217,7 +275,7 @@ usage_func()
     echo "[ basic, build ]"
     echo ""
     echoY "Supported target version:"
-    echo "[ 1404, 1404a9, 1804, 1804ti, 1804a9 ]"
+    echo "[ 1404, 1404a9, 1804, 1804ti, 1804a9, 1804rk1808 ]"
 
     echoY "Images usage:"
     echo 'docker run --rm -it -v  /<source path on host>/tisdk:/<mapping path in docker container>/tisdk --workdir=/<mapping path in docker container>/tisdk --hostname "ti" -u $(id -un) zlg/yocto_ti_x86_64:build1804'

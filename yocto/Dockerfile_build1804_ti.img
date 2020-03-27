@@ -18,10 +18,14 @@ RUN mkdir -p /home/"$user"/bin \
         && cp repo /home/"$user/bin/repo" \
         && chmod a+x /home/"$user"/bin/repo \
         && echo "PATH=/home/$user/bin:$PATH" >> /home/$user/.bashrc \
-        && tar -Jxvf gcc-arm-8.3-2019.03-x86_64-arm-linux-gnueabihf.tar.xz -C /home/$user \
-        && tar -Jxvf gcc-arm-8.3-2019.03-x86_64-aarch64-linux-gnu.tar.xz -C /home/$user \
-        && tar -Jxvf gcc-linaro-7.2.1-2017.11-x86_64_arm-linux-gnueabihf.tar.xz -C /home/$user \
-        && tar -Jxvf gcc-linaro-7.2.1-2017.11-x86_64_aarch64-linux-gnu.tar.xz -C /home/$user
+        && tar -Jxf gcc-arm-8.3-2019.03-x86_64-arm-linux-gnueabihf.tar.xz -C /home/$user \
+        && tar -Jxf gcc-arm-8.3-2019.03-x86_64-aarch64-linux-gnu.tar.xz -C /home/$user \
+        && tar -Jxf gcc-linaro-7.2.1-2017.11-x86_64_arm-linux-gnueabihf.tar.xz -C /home/$user \
+        && tar -Jxf gcc-linaro-7.2.1-2017.11-x86_64_aarch64-linux-gnu.tar.xz -C /home/$user \
+        && rm gcc-arm-8.3-2019.03-x86_64-arm-linux-gnueabihf.tar.xz \
+        && rm gcc-arm-8.3-2019.03-x86_64-aarch64-linux-gnu.tar.xz \
+        && rm gcc-linaro-7.2.1-2017.11-x86_64_arm-linux-gnueabihf.tar.xz \
+        && rm gcc-linaro-7.2.1-2017.11-x86_64_aarch64-linux-gnu.tar.xz
 
 #USER $user
 
